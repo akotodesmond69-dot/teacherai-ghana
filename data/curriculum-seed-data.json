@@ -1,0 +1,587 @@
+{
+  "_note": "VERIFIED against the official NaCCA curriculum PDFs: Mathematics Curriculum for Primary Schools (Basic 4-6), nacca.gov.gh/wp-content/uploads/2019/04/MATHS-UPPER-PRIMARY-B4-B6.pdf; Science Curriculum for Primary Schools (Basic 4-6), nacca.gov.gh/wp-content/uploads/2019/04/SCIENCE-UPPER-PRIMARY-B4-B6.pdf; English Language Curriculum for Primary Schools (Basic 4-6), nacca.gov.gh/wp-content/uploads/2019/04/ENGLISH-UPPER-PRIMARY-B4-B6.pdf. Expanded 2026-08-09 with a much deeper pull from all three documents across Basic 4, 5, and 6, covering every strand of each subject. All strand, sub-strand, content standard, and indicator text below are taken directly from these documents. Expanded again 2026-08-11 with Ghanaian Language and Culture curriculum (nacca.gov.gh/wp-content/uploads/2019/06/GHANAIAN-LANGUAGE-B4-B6.pdf) — the same national framework applies identically to Twi, Fante, Ga, and other Ghanaian languages, so these three subjects share verified indicator text. Also added French (nacca.gov.gh/wp-content/uploads/2022/10/FRENCH-LANGUAGE.pdf), currently with 1 verified JHS 1 indicator — more to be added as sourced.",
+  "subjects": [
+    {
+      "name": "Mathematics",
+      "class_level": "Basic 4",
+      "indicators": [
+        {
+          "strand": "Number",
+          "sub_strand": "Counting, Representation & Cardinality",
+          "content_standard": "Demonstrate an understanding of quantities and place value for multi-digit whole numerals up to 100,000.",
+          "indicator_text": "Model number quantities, place value for multi-digit using graph sheets or multi-base materials up to 100,000.",
+          "indicator_code": "B4.1.1.1.1"
+        },
+        {
+          "strand": "Number",
+          "sub_strand": "Counting, Representation & Cardinality",
+          "content_standard": "Demonstrate an understanding of quantities and place value for multi-digit whole numerals up to 100,000.",
+          "indicator_text": "Compare and order whole numbers up to 10,000 and represent comparisons using the symbols \"<\", \"=\", \">\".",
+          "indicator_code": "B4.1.1.1.4"
+        },
+        {
+          "strand": "Number",
+          "sub_strand": "Counting, Representation & Cardinality",
+          "content_standard": "Demonstrate an understanding of factors, multiples and squared numbers.",
+          "indicator_text": "Determine the set of factors of a given number up to 50.",
+          "indicator_code": "B4.1.1.3.1"
+        },
+        {
+          "strand": "Number",
+          "sub_strand": "Number Operations",
+          "content_standard": "Recall basic multiplication facts up to 12 x 12.",
+          "indicator_text": "Determine basic multiplication facts up to 12 x 12.",
+          "indicator_code": "B4.1.2.1.1"
+        },
+        {
+          "strand": "Number",
+          "sub_strand": "Number Operations",
+          "content_standard": "Demonstrate an understanding of multiplication (2 or 3-digit by 1-digit).",
+          "indicator_text": "Multiply multi-digit numbers efficiently.",
+          "indicator_code": "B4.1.2.3.1"
+        },
+        {
+          "strand": "Number",
+          "sub_strand": "Fractions",
+          "content_standard": "Demonstrate an understanding of strategies for comparing, adding and subtracting fractions (same denominator, or one being a multiple of the others).",
+          "indicator_text": "Compare and order fractions with like denominators by using pictorial representations and finding equivalent fractions using the Lowest Common Denominator (LCD).",
+          "indicator_code": "B4.1.3.2.1"
+        },
+        {
+          "strand": "Number",
+          "sub_strand": "Fractions",
+          "content_standard": "Develop an understanding of decimals (tenths and hundredths) using concrete and pictorial representations and write decimal fractions as base ten numbers with place value.",
+          "indicator_text": "Describe and represent decimals (tenths and hundredths) concretely, pictorially, and symbolically.",
+          "indicator_code": "B4.1.4.1.1"
+        },
+        {
+          "strand": "Number",
+          "sub_strand": "Fractions",
+          "content_standard": "Demonstrate an understanding of percent (limited to whole numbers) concretely, pictorially, and symbolically.",
+          "indicator_text": "Model or recognise percent (as a fraction related to hundredths) using concrete models, pictorial representations and number line.",
+          "indicator_code": "B4.1.5.1.1"
+        },
+        {
+          "strand": "Algebra",
+          "sub_strand": "Patterns and Relationships",
+          "content_standard": "Demonstrate an understanding of how to identify and describe patterns found in tables and charts, including a multiplication chart.",
+          "indicator_text": "Describe the pattern found in a given table or chart.",
+          "indicator_code": "B4.2.1.1.1"
+        },
+        {
+          "strand": "Algebra",
+          "sub_strand": "Unknowns, Expressions and Equations",
+          "content_standard": "Express a given problem as an equation in which a symbol is used to represent an unknown number.",
+          "indicator_text": "Write a given problem as an equation in which a symbol is used to represent an unknown number.",
+          "indicator_code": "B4.2.2.1.1"
+        },
+        {
+          "strand": "Algebra",
+          "sub_strand": "Unknowns, Expressions and Equations",
+          "content_standard": "Solve one-step equations involving a symbol to represent an unknown number.",
+          "indicator_text": "Solve a given one-step equation using manipulatives.",
+          "indicator_code": "B4.2.2.2.1"
+        },
+        {
+          "strand": "Geometry and Measurement",
+          "sub_strand": "2D and 3D Shapes",
+          "content_standard": "Identify the lines of symmetry of regular and irregular 2D shapes.",
+          "indicator_text": "Identify the lines of symmetry of regular and irregular 2D shapes (triangles and quadrilaterals).",
+          "indicator_code": "B4.3.1.1.2"
+        },
+        {
+          "strand": "Geometry and Measurement",
+          "sub_strand": "Position / Transformation",
+          "content_standard": "Describe the position of objects in space using the cardinal points.",
+          "indicator_text": "Tell the position and motion of objects in space using the cardinal points north, south, east and west.",
+          "indicator_code": "B4.3.2.1.1"
+        },
+        {
+          "strand": "Geometry and Measurement",
+          "sub_strand": "Measurement (Perimeter and Area)",
+          "content_standard": "Demonstrate understanding of perimeter of regular and irregular shapes.",
+          "indicator_text": "Measure and record perimeter for regular and irregular shapes in cm and m.",
+          "indicator_code": "B4.3.3.1.2"
+        },
+        {
+          "strand": "Geometry and Measurement",
+          "sub_strand": "Measurement (Perimeter and Area)",
+          "content_standard": "Demonstrate an understanding of area of regular and irregular 2-D shapes.",
+          "indicator_text": "Recognise that area is measured in square units.",
+          "indicator_code": "B4.3.3.2.1"
+        },
+        {
+          "strand": "Geometry and Measurement",
+          "sub_strand": "Measurement (Time)",
+          "content_standard": "Demonstrate understanding of time taken by events in minutes and hours.",
+          "indicator_text": "Tell the time in hours and minutes in analogue and digital watches including 24-hour clocks.",
+          "indicator_code": "B4.3.3.3.1"
+        },
+        {
+          "strand": "Data",
+          "sub_strand": "Data Collection, Organization, Presentation, Interpretation and Analysis",
+          "content_standard": "Demonstrate an understanding of many-to-one correspondence in displaying, and reading or interpreting, graphs.",
+          "indicator_text": "Use an understanding of one-to-one correspondence to read and interpret graphs.",
+          "indicator_code": "B4.4.1.1.1"
+        },
+        {
+          "strand": "Data",
+          "sub_strand": "Data Collection, Organization, Presentation, Interpretation and Analysis",
+          "content_standard": "Construct and interpret pictographs and bar graphs involving many-to-one correspondence to draw conclusions.",
+          "indicator_text": "Identify common features of graphs that use many-to-one correspondence and use that understanding to draw bar graphs or pictographs, complete with title, labelled axes, key or legend, to represent data collected (up to 4 categories of data).",
+          "indicator_code": "B4.4.1.2.1"
+        }
+      ]
+    },
+    {
+      "name": "Mathematics",
+      "class_level": "Basic 5",
+      "indicators": [
+        {
+          "strand": "Number",
+          "sub_strand": "Counting, Representation & Cardinality",
+          "content_standard": "Demonstrate an understanding of quantities and place value for multi-digit numerals up to 1,000,000.",
+          "indicator_text": "Model number quantities up to 1,000,000 using graph sheets and multi-base block.",
+          "indicator_code": "B5.1.1.1.1"
+        },
+        {
+          "strand": "Number",
+          "sub_strand": "Counting, Representation & Cardinality",
+          "content_standard": "Demonstrate an understanding of quantities and place value for multi-digit numerals up to 1,000,000.",
+          "indicator_text": "Compare and order whole numbers up to 100,000 and represent the comparison using \">\", \"<\", or \"=\".",
+          "indicator_code": "B5.1.1.1.4"
+        }
+      ]
+    },
+    {
+      "name": "Integrated Science",
+      "class_level": "Basic 4",
+      "indicators": [
+        {
+          "strand": "Diversity of Matter",
+          "sub_strand": "Living and Non-Living Things",
+          "content_standard": "Understand the physical features and life processes of living things and use this understanding to classify them.",
+          "indicator_text": "Classify animals into insects, birds, mammals and reptiles.",
+          "indicator_code": "B4.1.1.1.1"
+        },
+        {
+          "strand": "Diversity of Matter",
+          "sub_strand": "Living and Non-Living Things",
+          "content_standard": "Understand the physical features and life processes of living things and use this understanding to classify them.",
+          "indicator_text": "Know life processes of animals (movement, nutrition and reproduction).",
+          "indicator_code": "B4.1.1.1.2"
+        },
+        {
+          "strand": "Diversity of Matter",
+          "sub_strand": "Materials",
+          "content_standard": "Understand mixtures, their types, formation, uses and ways of separating them into their components.",
+          "indicator_text": "Identify a liquid-liquid mixture and describe how to separate its components.",
+          "indicator_code": "B4.1.2.2.1"
+        },
+        {
+          "strand": "Cycles",
+          "sub_strand": "Earth Science",
+          "content_standard": "Recognise that some events in our environment occur recurrently.",
+          "indicator_text": "Demonstrate understanding of cyclic movements in the environment.",
+          "indicator_code": "B4.2.1.1.1"
+        },
+        {
+          "strand": "Cycles",
+          "sub_strand": "Earth Science",
+          "content_standard": "Recognise the relationship between the earth and the sun.",
+          "indicator_text": "Identify the objects in the sky during day and night.",
+          "indicator_code": "B4.2.1.2.1"
+        },
+        {
+          "strand": "Cycles",
+          "sub_strand": "Earth Science",
+          "content_standard": "Show understanding of the roles of condensation, evaporation, transpiration and precipitation in the hydrological (water) cycle.",
+          "indicator_text": "Demonstrate the process of evapotranspiration.",
+          "indicator_code": "B4.2.1.3.1"
+        },
+        {
+          "strand": "Cycles",
+          "sub_strand": "Life Cycles of Organisms",
+          "content_standard": "Demonstrate understanding of the life cycle of plants.",
+          "indicator_text": "Observe, identify and give functions of the parts of a plant.",
+          "indicator_code": "B4.2.2.1.1"
+        },
+        {
+          "strand": "Systems",
+          "sub_strand": "The Human Body Systems",
+          "content_standard": "Recognise that different parts of the human body work interdependently to perform a specific function.",
+          "indicator_text": "Know the organs of the digestive system and their functions.",
+          "indicator_code": "B4.3.1.1.1"
+        },
+        {
+          "strand": "Systems",
+          "sub_strand": "The Solar System",
+          "content_standard": "Show an understanding of the orderliness of the sun, planets and satellites in the solar system, as well as the important role of the sun in the existence of the solar system.",
+          "indicator_text": "Explain that the sun is at the centre of the solar system.",
+          "indicator_code": "B4.3.2.1.1"
+        },
+        {
+          "strand": "Systems",
+          "sub_strand": "Ecosystem",
+          "content_standard": "Show understanding and appreciation of the interactions and interdependencies of organisms in an ecosystem.",
+          "indicator_text": "Explain the concept of ecosystem.",
+          "indicator_code": "B4.3.3.1.1"
+        },
+        {
+          "strand": "Forces and Energy",
+          "sub_strand": "Sources and Forms of Energy",
+          "content_standard": "Demonstrate understanding of the concept of energy, its various forms, sources and how to transform and conserve it.",
+          "indicator_text": "Identify the effect of heat on the change of state of substances.",
+          "indicator_code": "B4.4.1.1.1"
+        },
+        {
+          "strand": "Forces and Energy",
+          "sub_strand": "Electricity and Electronics",
+          "content_standard": "Demonstrate knowledge of generation of electricity, its transmission and transformation into other forms.",
+          "indicator_text": "Identify the uses of electricity.",
+          "indicator_code": "B4.4.2.1.1"
+        },
+        {
+          "strand": "Forces and Energy",
+          "sub_strand": "Forces and Movement",
+          "content_standard": "Know that movement is caused by applied forces due to the release of stored energy.",
+          "indicator_text": "Demonstrate understanding of elastic and compressional forces and their everyday applications.",
+          "indicator_code": "B4.4.3.1.1"
+        },
+        {
+          "strand": "Humans and the Environment",
+          "sub_strand": "Personal Hygiene and Sanitation",
+          "content_standard": "Recognise the importance of personal hygiene.",
+          "indicator_text": "Know how to care for one's self and the environment.",
+          "indicator_code": "B4.5.1.1.1"
+        },
+        {
+          "strand": "Humans and the Environment",
+          "sub_strand": "Diseases",
+          "content_standard": "Know common diseases of humans; causes, symptoms, effects and prevention.",
+          "indicator_text": "Identify causes, symptoms and prevention of measles.",
+          "indicator_code": "B4.5.2.1.1"
+        }
+      ]
+    },
+    {
+      "name": "Integrated Science",
+      "class_level": "Basic 5",
+      "indicators": [
+        {
+          "strand": "Diversity of Matter",
+          "sub_strand": "Living and Non-Living Things",
+          "content_standard": "Understand the physical features and life processes of living things and use this understanding to classify them.",
+          "indicator_text": "Know the life processes of living things (growth, sensitivity to the environment, respiration and excretion).",
+          "indicator_code": "B5.1.1.1.1"
+        },
+        {
+          "strand": "Diversity of Matter",
+          "sub_strand": "Materials",
+          "content_standard": "Recognise materials as important resources for providing human needs.",
+          "indicator_text": "Classify everyday materials based on their properties (soft, hard, rough, smooth, opaque, transparent and bendable).",
+          "indicator_code": "B5.1.2.1.1"
+        },
+        {
+          "strand": "Cycles",
+          "sub_strand": "Earth Science",
+          "content_standard": "Recognise that some events in our environment occur recurrently.",
+          "indicator_text": "Know how day and night are formed.",
+          "indicator_code": "B5.2.1.1.1"
+        },
+        {
+          "strand": "Cycles",
+          "sub_strand": "Earth Science",
+          "content_standard": "Show understanding of the roles of condensation, evaporation, transpiration and precipitation in the hydrological (water) cycle.",
+          "indicator_text": "Demonstrate evaporation and condensation as important processes of the hydrological (water) cycle.",
+          "indicator_code": "B5.2.1.3.1"
+        },
+        {
+          "strand": "Systems",
+          "sub_strand": "The Human Body Systems",
+          "content_standard": "Recognise that different parts of the human body work interdependently to perform a specific function.",
+          "indicator_text": "Know the parts of the respiratory system in humans.",
+          "indicator_code": "B5.3.1.1.1"
+        },
+        {
+          "strand": "Forces and Energy",
+          "sub_strand": "Sources and Forms of Energy",
+          "content_standard": "Demonstrate understanding of the concept of energy, its various forms and sources and the ways in which it can be transformed and conserved.",
+          "indicator_text": "Explain how energy is transformed from one form to another.",
+          "indicator_code": "B5.4.1.1.1"
+        },
+        {
+          "strand": "Humans and the Environment",
+          "sub_strand": "Personal Hygiene and Sanitation",
+          "content_standard": "Recognise the importance of personal hygiene.",
+          "indicator_text": "Know why it is important to wash clothes regularly.",
+          "indicator_code": "B5.5.1.1.1"
+        }
+      ]
+    },
+    {
+      "name": "Integrated Science",
+      "class_level": "Basic 6",
+      "indicators": [
+        {
+          "strand": "Diversity of Matter",
+          "sub_strand": "Living and Non-Living Things",
+          "content_standard": "Show understanding of the physical features and life processes of living things and use this understanding to classify them.",
+          "indicator_text": "Classify plants based on their root system.",
+          "indicator_code": "B6.1.1.1.1"
+        },
+        {
+          "strand": "Diversity of Matter",
+          "sub_strand": "Materials",
+          "content_standard": "Recognise materials as important resources for providing human needs.",
+          "indicator_text": "Know the general properties of metals such as lustre, malleability, conductivity and ductility.",
+          "indicator_code": "B6.1.2.1.1"
+        },
+        {
+          "strand": "Cycles",
+          "sub_strand": "Earth Science",
+          "content_standard": "Recognise the relationship between the earth and the sun.",
+          "indicator_text": "Describe the relative sizes of the earth and sun and their importance.",
+          "indicator_code": "B6.2.1.1.1"
+        },
+        {
+          "strand": "Cycles",
+          "sub_strand": "Earth Science",
+          "content_standard": "Show understanding of the roles of condensation, evaporation, transpiration and precipitation in the hydrological (water) cycle.",
+          "indicator_text": "Explain how rain falls from clouds.",
+          "indicator_code": "B6.2.1.2.1"
+        }
+      ]
+    },
+    {
+      "name": "English Language",
+      "class_level": "Basic 4",
+      "indicators": [
+        {
+          "strand": "Oral Language",
+          "sub_strand": "Songs",
+          "content_standard": "Demonstrate understanding of variety of songs.",
+          "indicator_text": "Listen attentively to songs and sing them with appropriate stress, rhythm and actions.",
+          "indicator_code": "B4.1.1.1.1"
+        },
+        {
+          "strand": "Oral Language",
+          "sub_strand": "Story Telling",
+          "content_standard": "Respond to stories.",
+          "indicator_text": "Retell stories sequentially, including key details.",
+          "indicator_code": "B4.1.4.1.1"
+        },
+        {
+          "strand": "Oral Language",
+          "sub_strand": "Asking and Answering Questions",
+          "content_standard": "Demonstrate understanding in asking and answering questions correctly.",
+          "indicator_text": "Use appropriate pronunciation and intonation in asking and answering questions.",
+          "indicator_code": "B4.1.8.1.1"
+        },
+        {
+          "strand": "Reading",
+          "sub_strand": "Phonics",
+          "content_standard": "Connect sounds to letters; and blend letters/syllables in order to read and write.",
+          "indicator_text": "Match sounds to their corresponding letter/letter patterns (e.g. initial/final consonants, initial short vowels, final \"y\" as vowel, silent letters etc.).",
+          "indicator_code": "B4.2.2.1.1"
+        },
+        {
+          "strand": "Reading",
+          "sub_strand": "Vocabulary",
+          "content_standard": "Understand word meanings and usages.",
+          "indicator_text": "Use level-appropriate content words (nouns, verbs, adjectives and adverbs) and function words (prepositions) appropriately in spoken and written communication.",
+          "indicator_code": "B4.2.6.1.1"
+        },
+        {
+          "strand": "Reading",
+          "sub_strand": "Comprehension",
+          "content_standard": "Process and comprehend level-appropriate texts.",
+          "indicator_text": "Construct meaning from texts read.",
+          "indicator_code": "B4.2.7.1.1"
+        },
+        {
+          "strand": "Grammar Usage at Word and Phrase Levels",
+          "sub_strand": "Nouns",
+          "content_standard": "Apply knowledge of different types of nouns in communication.",
+          "indicator_text": "Identify and use nouns in phrases to identify people, animals, events and objects.",
+          "indicator_code": "B4.3.1.1.1"
+        },
+        {
+          "strand": "Grammar Usage at Word and Phrase Levels",
+          "sub_strand": "Verbs",
+          "content_standard": "Apply the knowledge of verbs in communication.",
+          "indicator_text": "Use different types of verbs: main verb, helping verb (primary auxiliary and modal auxiliary).",
+          "indicator_code": "B4.3.5.1.1"
+        },
+        {
+          "strand": "Writing",
+          "sub_strand": "Writing as a Process",
+          "content_standard": "Apply the skills and strategies for idea generation, selection, development, organisation and revision in writing.",
+          "indicator_text": "Select a topic of choice on issues in the immediate environment, brainstorm and organise ideas before writing.",
+          "indicator_code": "B4.4.9.1.1"
+        },
+        {
+          "strand": "Writing",
+          "sub_strand": "Narrative Writing",
+          "content_standard": "Narrate situations, express feelings and convey point of view about the world or a fictional world.",
+          "indicator_text": "Write about real or imagined experiences or events following story structure (beginning, middle and ending), describing the setting, developing the plot, and describing characters with elaboration.",
+          "indicator_code": "B4.4.10.1.1"
+        }
+      ]
+    },
+    {
+      "name": "Twi",
+      "class_level": "Basic 4",
+      "indicators": [
+        {
+          "strand": "Oral Language (Listening and Speaking)",
+          "sub_strand": "Songs",
+          "content_standard": "Exhibit knowledge of traditional and occupational songs by recognising their types and their related songs.",
+          "indicator_text": "Sing and discuss songs connected to traditional occupations and their importance.",
+          "indicator_code": "B4.1.1.1.1"
+        },
+        {
+          "strand": "Oral Language (Listening and Speaking)",
+          "sub_strand": "Listening and Story Telling",
+          "content_standard": "Demonstrate knowledge on the structure and features of folktales.",
+          "indicator_text": "Retell a folktale of about three scenes and recognise its beginning and end, and discuss the features of the folktale.",
+          "indicator_code": "B4.1.4.1.1"
+        },
+        {
+          "strand": "Reading",
+          "sub_strand": "Comprehension",
+          "content_standard": "Exhibit knowledge of answering questions based on texts presented.",
+          "indicator_text": "Explain the meanings of unfamiliar words.",
+          "indicator_code": "B4.2.6.1.1"
+        },
+        {
+          "strand": "Writing",
+          "sub_strand": "Penmanship/Handwriting",
+          "content_standard": "Exhibit knowledge of the use of full stops, commas and question marks appropriately in sentences, and write simple sentences boldly and clearly.",
+          "indicator_text": "Recognise that a full stop is used at the end of a complete sentence.",
+          "indicator_code": "B4.3.1.1.1"
+        }
+      ]
+    },
+    {
+      "name": "Twi",
+      "class_level": "Basic 5",
+      "indicators": [
+        {
+          "strand": "Oral Language (Listening and Speaking)",
+          "sub_strand": "Songs",
+          "content_standard": "Show an understanding of cradle songs/lullaby.",
+          "indicator_text": "Sing cradle songs/lullaby with the correct rhythms, and discuss the importance of cradle songs/lullaby to the baby, mother and caretaker.",
+          "indicator_code": "B5.1.1.1.1"
+        }
+      ]
+    },
+    {
+      "name": "Fante",
+      "class_level": "Basic 4",
+      "indicators": [
+        {
+          "strand": "Oral Language (Listening and Speaking)",
+          "sub_strand": "Songs",
+          "content_standard": "Exhibit knowledge of traditional and occupational songs by recognising their types and their related songs.",
+          "indicator_text": "Sing and discuss songs connected to traditional occupations and their importance.",
+          "indicator_code": "B4.1.1.1.1"
+        },
+        {
+          "strand": "Oral Language (Listening and Speaking)",
+          "sub_strand": "Listening and Story Telling",
+          "content_standard": "Demonstrate knowledge on the structure and features of folktales.",
+          "indicator_text": "Retell a folktale of about three scenes and recognise its beginning and end, and discuss the features of the folktale.",
+          "indicator_code": "B4.1.4.1.1"
+        },
+        {
+          "strand": "Reading",
+          "sub_strand": "Comprehension",
+          "content_standard": "Exhibit knowledge of answering questions based on texts presented.",
+          "indicator_text": "Explain the meanings of unfamiliar words.",
+          "indicator_code": "B4.2.6.1.1"
+        },
+        {
+          "strand": "Writing",
+          "sub_strand": "Penmanship/Handwriting",
+          "content_standard": "Exhibit knowledge of the use of full stops, commas and question marks appropriately in sentences, and write simple sentences boldly and clearly.",
+          "indicator_text": "Recognise that a full stop is used at the end of a complete sentence.",
+          "indicator_code": "B4.3.1.1.1"
+        }
+      ]
+    },
+    {
+      "name": "Fante",
+      "class_level": "Basic 5",
+      "indicators": [
+        {
+          "strand": "Oral Language (Listening and Speaking)",
+          "sub_strand": "Songs",
+          "content_standard": "Show an understanding of cradle songs/lullaby.",
+          "indicator_text": "Sing cradle songs/lullaby with the correct rhythms, and discuss the importance of cradle songs/lullaby to the baby, mother and caretaker.",
+          "indicator_code": "B5.1.1.1.1"
+        }
+      ]
+    },
+    {
+      "name": "Ga",
+      "class_level": "Basic 4",
+      "indicators": [
+        {
+          "strand": "Oral Language (Listening and Speaking)",
+          "sub_strand": "Songs",
+          "content_standard": "Exhibit knowledge of traditional and occupational songs by recognising their types and their related songs.",
+          "indicator_text": "Sing and discuss songs connected to traditional occupations and their importance.",
+          "indicator_code": "B4.1.1.1.1"
+        },
+        {
+          "strand": "Oral Language (Listening and Speaking)",
+          "sub_strand": "Listening and Story Telling",
+          "content_standard": "Demonstrate knowledge on the structure and features of folktales.",
+          "indicator_text": "Retell a folktale of about three scenes and recognise its beginning and end, and discuss the features of the folktale.",
+          "indicator_code": "B4.1.4.1.1"
+        },
+        {
+          "strand": "Reading",
+          "sub_strand": "Comprehension",
+          "content_standard": "Exhibit knowledge of answering questions based on texts presented.",
+          "indicator_text": "Explain the meanings of unfamiliar words.",
+          "indicator_code": "B4.2.6.1.1"
+        },
+        {
+          "strand": "Writing",
+          "sub_strand": "Penmanship/Handwriting",
+          "content_standard": "Exhibit knowledge of the use of full stops, commas and question marks appropriately in sentences, and write simple sentences boldly and clearly.",
+          "indicator_text": "Recognise that a full stop is used at the end of a complete sentence.",
+          "indicator_code": "B4.3.1.1.1"
+        }
+      ]
+    },
+    {
+      "name": "Ga",
+      "class_level": "Basic 5",
+      "indicators": [
+        {
+          "strand": "Oral Language (Listening and Speaking)",
+          "sub_strand": "Songs",
+          "content_standard": "Show an understanding of cradle songs/lullaby.",
+          "indicator_text": "Sing cradle songs/lullaby with the correct rhythms, and discuss the importance of cradle songs/lullaby to the baby, mother and caretaker.",
+          "indicator_code": "B5.1.1.1.1"
+        }
+      ]
+    },
+    {
+      "name": "French",
+      "class_level": "JHS 1",
+      "indicators": [
+        {
+          "strand": "Faire Connaissance",
+          "sub_strand": "Exprimer ses Goûts et ses Préférences",
+          "content_standard": "Comprendre et exprimer les goûts et les préférences. (Understand and express likes and preferences.)",
+          "indicator_text": "Écouter, comprendre et réagir à une conversation dans laquelle des gens parlent de ce qu'ils aiment ou n'aiment pas. (Listen, understand, and react to a conversation in which people talk about what they like or dislike.)",
+          "indicator_code": "B7.1.3.1.1"
+        }
+      ]
+    }
+  ]
+}
