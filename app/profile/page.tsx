@@ -13,7 +13,7 @@ export default async function ProfilePage() {
   if (!user) redirect('/login')
 
   const [{ data: teacher }, { count: lessonsCount }, { data: timetable }] = await Promise.all([
-    supabase.from('teachers').select('full_name, school_name, avatar_url').eq('id', user.id).single(),
+    supabase.from('teachers').select('full_name, school_name, avatar_url, school_logo_url').eq('id', user.id).single(),
     supabase.from('lesson_notes').select('*', { count: 'exact', head: true }).eq('teacher_id', user.id),
     supabase.from('timetable_entries').select('*').eq('teacher_id', user.id),
   ])
@@ -27,6 +27,7 @@ export default async function ProfilePage() {
           fullName={teacher?.full_name ?? ''}
           schoolName={teacher?.school_name ?? ''}
           avatarUrl={teacher?.avatar_url ?? null}
+          schoolLogoUrl={teacher?.school_logo_url ?? null}
           email={user.email ?? ''}
           lessonsCount={lessonsCount ?? 0}
           timetable={(timetable ?? []) as any}

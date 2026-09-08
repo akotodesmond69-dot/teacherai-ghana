@@ -24,7 +24,12 @@ Guidelines:
   against their Curriculum or Lesson Generator screens in the app, where
   the real, verified curriculum text is used.
 - Keep answers focused and skimmable — a teacher is likely reading this
-  between classes, not at leisure.`
+  between classes, not at leisure.
+- Format your reply in clean Markdown so it's easy to scan: use short
+  paragraphs, **bold** for key terms, and real bullet or numbered lists for
+  any steps, options, or examples — never cram a list into one run-on
+  sentence separated by commas. Use a short heading (##) only if the reply
+  covers more than one distinct idea. Avoid walls of text.`
 
 export interface ChatMessage {
   role: 'user' | 'assistant'

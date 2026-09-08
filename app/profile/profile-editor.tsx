@@ -6,7 +6,7 @@
 
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { updateProfileAction, saveTimetableAction, updateAvatarUrlAction } from './actions'
+import { updateProfileAction, saveTimetableAction, updateAvatarUrlAction, updateSchoolLogoUrlAction } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,11 +22,12 @@ interface TimetableRow {
 }
 
 export function ProfileEditor({
-  fullName, schoolName, avatarUrl, email, lessonsCount, timetable,
+  fullName, schoolName, avatarUrl, schoolLogoUrl, email, lessonsCount, timetable,
 }: {
   fullName: string
   schoolName: string
   avatarUrl: string | null
+  schoolLogoUrl: string | null
   email: string
   lessonsCount: number
   timetable: TimetableRow[]
@@ -36,7 +37,9 @@ export function ProfileEditor({
   const [name, setName] = useState(fullName)
   const [school, setSchool] = useState(schoolName)
   const [avatar, setAvatar] = useState(avatarUrl)
+  const [logo, setLogo] = useState(schoolLogoUrl)
   const [uploading, setUploading] = useState(false)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
   const [savingProfile, setSavingProfile] = useState(false)
   const [savingTimetable, setSavingTimetable] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -89,6 +92,45 @@ export function ProfileEditor({
     setMessage('Photo updated ✓')
   }
 
+  // WHY this reuses the "avatars" Storage bucket rather than a dedicated
+  // "logos" bucket: the RLS policy there already scopes writes to
+  // {auth.uid()}/* for ANY filename, so "school-logo.png" is just as
+  // protected as "avatar.jpg" with zero new policies needed (see Phase 21
+  // migration notes).
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const MAX_LOGO_SIZE = 5 * 1024 * 1024 // 5MB
+    if (file.size > MAX_LOGO_SIZE) {
+      setMessage('That logo is too large. Please use an image under 5MB.')
+      return
+    }
+
+    setUploadingLogo(true)
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setUploadingLogo(false); return }
+
+    const filePath = `${user.id}/school-logo.${file.name.split('.').pop()}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true })
+
+    if (uploadError) {
+      setUploadingLogo(false)
+      setMessage('Could not upload logo.')
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath)
+    await updateSchoolLogoUrlAction(urlData.publicUrl)
+    setLogo(urlData.publicUrl)
+    setUploadingLogo(false)
+    setMessage('School logo updated ✓')
+  }
+
   async function handleSaveProfile() {
     setSavingProfile(true)
     const result = await updateProfileAction(name, school)
@@ -139,6 +181,25 @@ export function ProfileEditor({
           <div>
             <Label className="mb-1 block text-xs">School</Label>
             <Input value={school} onChange={(e) => setSchool(e.target.value)} placeholder="Your school" />
+          </div>
+          <div>
+            <Label className="mb-1 block text-xs">School logo</Label>
+            <div className="flex items-center gap-3">
+              {logo ? (
+                <img src={logo} alt="School logo" className="h-12 w-12 rounded object-contain border" />
+              ) : (
+                <div className="flex h-12 w-12 items-center justify-center rounded border bg-neutral-50 text-xs text-muted-foreground">
+                  none
+                </div>
+              )}
+              <label className="cursor-pointer text-xs text-info-blue underline">
+                {uploadingLogo ? 'Uploading…' : 'Change logo'}
+                <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
+              </label>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Used to auto-build your exam letterhead in the Word Processor.
+            </p>
           </div>
           <div>
             <Label className="mb-1 block text-xs">Lessons generated</Label>

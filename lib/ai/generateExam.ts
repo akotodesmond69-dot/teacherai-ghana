@@ -1,10 +1,21 @@
 // Purpose: Calls the AI to generate a full exam, validates the response
 // against the exact required structure (question counts, marks) for the
-// class band, and retries once on failure.
+// class band, and retries once on failure. Supports both generation paths:
+// from a teacher's own lessons, or a standard exam straight from selected
+// curriculum indicators.
 // Folder: lib/ai/generateExam.ts
 
-import { buildExamSystemPrompt, buildExamUserPrompt, type LessonSourceInput } from './buildExamPrompt'
+import {
+  buildExamSystemPrompt,
+  buildExamUserPrompt,
+  buildCurriculumExamSystemPrompt,
+  buildCurriculumExamUserPrompt,
+  type LessonSourceInput,
+  type CurriculumSourceInput,
+} from './buildExamPrompt'
 import { isValidExamContent, type ExamContent, type ExamStructure } from './examSchema'
+
+const MAX_ATTEMPTS = 2
 
 export async function generateExam(
   subjectName: string,
@@ -12,25 +23,51 @@ export async function generateExam(
   lessons: LessonSourceInput[],
   structure: ExamStructure
 ): Promise<ExamContent> {
-  const MAX_ATTEMPTS = 2
-  let lastError: Error | null = null
+  return runWithRetries(() =>
+    callModel(
+      buildExamSystemPrompt(structure),
+      buildExamUserPrompt(subjectName, classLevel, lessons),
+      structure
+    )
+  )
+}
 
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+// WHY a separate exported function rather than a boolean flag on
+// generateExam: the two paths take different input shapes (lessons vs.
+// curriculum indicators) and build different prompts — a shared signature
+// would need optional/union params for both, which is harder to call
+// correctly than two small, explicit functions.
+export async function generateExamFromCurriculum(
+  subjectName: string,
+  classLevel: string,
+  indicators: CurriculumSourceInput[],
+  structure: ExamStructure
+): Promise<ExamContent> {
+  return runWithRetries(() =>
+    callModel(
+      buildCurriculumExamSystemPrompt(structure),
+      buildCurriculumExamUserPrompt(subjectName, classLevel, indicators),
+      structure
+    )
+  )
+}
+
+async function runWithRetries(attempt: () => Promise<ExamContent>): Promise<ExamContent> {
+  let lastError: Error | null = null
+  for (let i = 1; i <= MAX_ATTEMPTS; i++) {
     try {
-      return await callModelOnce(subjectName, classLevel, lessons, structure)
+      return await attempt()
     } catch (err) {
       lastError = err as Error
-      console.warn(`Exam generation attempt ${attempt} failed:`, lastError.message)
+      console.warn(`Exam generation attempt ${i} failed:`, lastError.message)
     }
   }
-
   throw lastError ?? new Error('Exam generation failed after retries.')
 }
 
-async function callModelOnce(
-  subjectName: string,
-  classLevel: string,
-  lessons: LessonSourceInput[],
+async function callModel(
+  systemPrompt: string,
+  userPrompt: string,
   structure: ExamStructure
 ): Promise<ExamContent> {
   const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
@@ -43,8 +80,8 @@ async function callModelOnce(
       model: 'gemini-3.6-flash',
       temperature: 0.4,
       messages: [
-        { role: 'system', content: buildExamSystemPrompt(structure) },
-        { role: 'user', content: buildExamUserPrompt(subjectName, classLevel, lessons) },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ],
     }),
   })

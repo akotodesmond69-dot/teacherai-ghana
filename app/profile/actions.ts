@@ -77,3 +77,26 @@ export async function updateAvatarUrlAction(avatarUrl: string) {
   revalidatePath('/profile')
   return { success: true }
 }
+
+// WHY this needs its own action rather than reusing updateAvatarUrlAction:
+// a school logo and a profile photo are conceptually different fields
+// (avatar_url vs. school_logo_url) even though the upload mechanics are
+// identical — the logo is what the new exam Word Processor uses to build
+// a letterhead, the avatar is just the teacher's own profile picture.
+export async function updateSchoolLogoUrlAction(logoUrl: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'You must be logged in.' }
+
+  const { error } = await supabase
+    .from('teachers')
+    .update({ school_logo_url: logoUrl })
+    .eq('id', user.id)
+
+  if (error) {
+    console.error('updateSchoolLogoUrlAction failed:', error)
+    return { error: 'Could not save your school logo.' }
+  }
+  revalidatePath('/profile')
+  return { success: true }
+}

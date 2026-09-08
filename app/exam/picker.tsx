@@ -9,7 +9,7 @@ import { generateExamAction } from './actions'
 import { getExamBand, EXAM_STRUCTURES } from '@/lib/ai/examSchema'
 import { Button } from '@/components/ui/button'
 
-interface LessonRow {
+export interface LessonRow {
   id: string
   created_at: string
   curriculum_indicators: {
