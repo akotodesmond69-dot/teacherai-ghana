@@ -4,6 +4,8 @@
 // from a teacher's own lessons, or a standard exam straight from selected
 // curriculum indicators.
 // Folder: lib/ai/generateExam.ts
+//
+// All AI traffic goes through ./gemini (model fallback, backoff, timeout).
 
 import {
   buildExamSystemPrompt,
@@ -13,7 +15,8 @@ import {
   type LessonSourceInput,
   type CurriculumSourceInput,
 } from './buildExamPrompt'
-import { isValidExamContent, type ExamContent, type ExamStructure } from './examSchema'
+import { type ExamContent, type ExamStructure } from './examSchema'
+import { geminiJson, GeminiError } from './gemini'
 
 const MAX_ATTEMPTS = 2
 
@@ -23,10 +26,10 @@ export async function generateExam(
   lessons: LessonSourceInput[],
   structure: ExamStructure
 ): Promise<ExamContent> {
-  return runWithRetries(() =>
-    callModel(
+  return runWithRetries(structure, (correction) =>
+    callModelOnce(
       buildExamSystemPrompt(structure),
-      buildExamUserPrompt(subjectName, classLevel, lessons),
+      buildExamUserPrompt(subjectName, classLevel, lessons) + correction,
       structure
     )
   )
@@ -43,75 +46,113 @@ export async function generateExamFromCurriculum(
   indicators: CurriculumSourceInput[],
   structure: ExamStructure
 ): Promise<ExamContent> {
-  return runWithRetries(() =>
-    callModel(
+  return runWithRetries(structure, (correction) =>
+    callModelOnce(
       buildCurriculumExamSystemPrompt(structure),
-      buildCurriculumExamUserPrompt(subjectName, classLevel, indicators),
+      buildCurriculumExamUserPrompt(subjectName, classLevel, indicators) + correction,
       structure
     )
   )
 }
 
-async function runWithRetries(attempt: () => Promise<ExamContent>): Promise<ExamContent> {
+async function runWithRetries(
+  _structure: ExamStructure,
+  attemptFn: (correction: string) => Promise<ExamContent>
+): Promise<ExamContent> {
   let lastError: Error | null = null
-  for (let i = 1; i <= MAX_ATTEMPTS; i++) {
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      return await attempt()
+      // On the second attempt, tell the model exactly what was wrong last
+      // time (usually "39 questions instead of 40").
+      const correction =
+        attempt > 1 && lastError instanceof GeminiError && lastError.kind === 'invalid_shape'
+          ? `\n\nIMPORTANT: your previous answer was rejected: ${lastError.message} Count carefully and return exactly the required number of questions.`
+          : ''
+      return await attemptFn(correction)
     } catch (err) {
       lastError = err as Error
-      console.warn(`Exam generation attempt ${i} failed:`, lastError.message)
+      console.warn(`Exam generation attempt ${attempt} failed:`, lastError.message)
+      // Bad key / exhausted quota will not fix itself on an immediate retry.
+      if (err instanceof GeminiError && ['auth', 'no_key', 'quota'].includes(err.kind)) break
     }
   }
+
   throw lastError ?? new Error('Exam generation failed after retries.')
 }
 
-async function callModel(
+async function callModelOnce(
   systemPrompt: string,
   userPrompt: string,
   structure: ExamStructure
 ): Promise<ExamContent> {
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gemini-3.6-flash',
-      temperature: 0.4,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt },
-      ],
-    }),
+  const parsed = await geminiJson({
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt },
+    ],
   })
 
-  if (!response.ok) {
-    const errorBody = await response.text()
-    throw new Error(`Gemini request failed: ${response.status} ${response.statusText} — ${errorBody}`)
+  return normaliseExam(parsed, structure)
+}
+
+// WHY we normalise instead of only rejecting: the structure (counts, marks
+// per question, total) is FIXED per class band, so the code — not the model —
+// is the source of truth for those numbers. Small slips that can be repaired
+// deterministically are repaired (extra questions trimmed, marks and total
+// reset to the real values, "B." -> "B"). Anything that cannot be repaired
+// without inventing content (too FEW questions, wrong option count) is still
+// rejected and retried, so a short paper is never shipped to a teacher.
+function normaliseExam(value: unknown, structure: ExamStructure): ExamContent {
+  const fail = (msg: string) => new GeminiError('invalid_shape', msg)
+
+  if (typeof value !== 'object' || value === null) throw fail('Reply was not an exam object.')
+  const v = value as Record<string, any>
+  if (typeof v.title !== 'string' || typeof v.instructions !== 'string') {
+    throw fail('Exam is missing a title or instructions.')
   }
-
-  const data = await response.json()
-  const rawText: string = data.choices?.[0]?.message?.content ?? ''
-  const cleaned = rawText.replace(/```json|```/g, '').trim()
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(cleaned)
-  } catch {
-    throw new Error('AI response was not valid JSON.')
+  if (!Array.isArray(v.objective_questions) || v.objective_questions.length < structure.objectiveCount) {
+    throw fail(
+      `Expected ${structure.objectiveCount} objective questions but got ${Array.isArray(v.objective_questions) ? v.objective_questions.length : 0}.`
+    )
   }
-
-  // WHY we validate against the EXACT structure, not just "is this an
-  // exam-shaped object": a paper with 27 objective questions instead of 30
-  // would silently produce a wrong-total-marks exam a teacher might not
-  // notice until printing it for real students. Strict validation here
-  // means a structural mismatch gets caught and retried, not shipped.
-  if (!isValidExamContent(parsed, structure)) {
-    throw new Error(
-      `AI response did not match the required structure (expected ${structure.objectiveCount} objective + ${structure.theoryCount} theory questions).`
+  if (!Array.isArray(v.theory_questions) || v.theory_questions.length < structure.theoryCount) {
+    throw fail(
+      `Expected ${structure.theoryCount} theory questions but got ${Array.isArray(v.theory_questions) ? v.theory_questions.length : 0}.`
     )
   }
 
-  return parsed
+  const objective = v.objective_questions.slice(0, structure.objectiveCount).map((q: any, i: number) => {
+    const letter = String(q?.correct_answer ?? '').trim().charAt(0).toUpperCase()
+    if (typeof q?.question_text !== 'string' || !Array.isArray(q?.options) || q.options.length !== 4) {
+      throw fail(`Objective question ${i + 1} must have question_text and exactly 4 options.`)
+    }
+    if (!['A', 'B', 'C', 'D'].includes(letter)) {
+      throw fail(`Objective question ${i + 1} has no valid correct_answer (A-D).`)
+    }
+    return {
+      question_text: q.question_text,
+      options: q.options.map(String),
+      correct_answer: letter,
+      marks: structure.marksPerObjective,
+    }
+  })
+
+  const theory = v.theory_questions.slice(0, structure.theoryCount).map((q: any, i: number) => {
+    if (typeof q?.question_text !== 'string') throw fail(`Theory question ${i + 1} is missing question_text.`)
+    return {
+      question_text: q.question_text,
+      marks: structure.marksPerTheory,
+      marking_notes: typeof q.marking_notes === 'string' ? q.marking_notes : '',
+    }
+  })
+
+  return {
+    title: v.title,
+    instructions: v.instructions,
+    duration_minutes: typeof v.duration_minutes === 'number' ? v.duration_minutes : 90,
+    objective_questions: objective,
+    theory_questions: theory,
+    total_marks: structure.totalMarks,
+  }
 }

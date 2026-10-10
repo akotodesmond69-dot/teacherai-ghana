@@ -7,6 +7,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { hasActivePremium } from '@/lib/payments/plans'
 import { generateLessonNote } from '@/lib/ai/generateLessonNote'
+import { friendlyAiError } from '@/lib/ai/gemini'
 import { emptyLessonMetadata } from '@/lib/ai/lessonSchema'
 
 const FREE_TIER_MONTHLY_LIMIT = 5
@@ -67,7 +68,7 @@ export async function generateLessonAction(indicatorId: string) {
     })
   } catch (err) {
     console.error('generateLessonAction: AI generation failed:', err)
-    return { error: 'Something went wrong generating your lesson. Please try again.' }
+    return { error: friendlyAiError(err, 'lesson') }
   }
 
   // 5. Save it — combined with blank metadata fields (week ending, class

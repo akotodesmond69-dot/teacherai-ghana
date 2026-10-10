@@ -31,35 +31,17 @@ Guidelines:
   sentence separated by commas. Use a short heading (##) only if the reply
   covers more than one distinct idea. Avoid walls of text.`
 
+import { geminiChat } from '@/lib/ai/gemini'
+
 export interface ChatMessage {
   role: 'user' | 'assistant'
   content: string
 }
 
 export async function generateAssistantReply(history: ChatMessage[]): Promise<string> {
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gemini-3.6-flash',
-      temperature: 0.6, // higher than our grounded features — natural,
-                         // conversational advice benefits from more variety
-      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...history],
-    }),
+  // Plain chat (no JSON mode). Thinking kept low so replies come back fast.
+  const text = await geminiChat({
+    messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...history],
   })
-
-  if (!response.ok) {
-    const errorBody = await response.text()
-    throw new Error(`Gemini request failed: ${response.status} — ${errorBody}`)
-  }
-
-  const data = await response.json()
-  return data.choices?.[0]?.message?.content ?? "Sorry, I couldn't come up with a response — please try again."
+  return text
 }
-
-// Note on why there's no JSON validation here, unlike Phases 6/9/10:
-// this is free-form conversational text, not structured data we need to
-// store in typed fields — there's nothing to validate the "shape" of.

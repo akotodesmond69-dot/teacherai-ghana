@@ -4,6 +4,8 @@
 // Folder: app/assistant/actions.ts
 'use server'
 
+import { friendlyAiError } from '@/lib/ai/gemini'
+
 import { createClient } from '@/lib/supabase/server'
 import { hasActivePremium } from '@/lib/payments/plans'
 import { generateAssistantReply, type ChatMessage } from '@/lib/assistant/generateAssistantReply'
@@ -71,10 +73,11 @@ export async function sendAssistantMessageAction(
   let replyText: string
   try {
     replyText = await generateAssistantReply((history ?? []) as ChatMessage[])
-  } catch {
+  } catch (err) {
+    console.error('assistant action: AI reply failed:', err)
     return {
       conversationId: activeConversationId,
-      error: 'Something went wrong getting a response. Please try again.',
+      error: friendlyAiError(err, 'reply'),
     }
   }
 

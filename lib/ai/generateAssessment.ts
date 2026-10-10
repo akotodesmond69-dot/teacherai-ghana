@@ -9,6 +9,7 @@ import {
   type AssessmentRequestOptions,
 } from './buildAssessmentPrompt'
 import { isValidAssessment, type AssessmentContent } from './assessmentSchema'
+import { geminiJson, GeminiError } from './gemini'
 import type { CurriculumIndicatorInput } from './buildPrompt'
 
 export async function generateAssessment(
@@ -24,6 +25,7 @@ export async function generateAssessment(
     } catch (err) {
       lastError = err as Error
       console.warn(`Assessment generation attempt ${attempt} failed:`, lastError.message)
+      if (err instanceof GeminiError && ['auth', 'no_key', 'quota'].includes(err.kind)) break
     }
   }
 
@@ -34,43 +36,15 @@ async function callModelOnce(
   indicator: CurriculumIndicatorInput,
   options: AssessmentRequestOptions
 ): Promise<AssessmentContent> {
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gemini-3.6-flash',
-      temperature: 0.4, // slightly higher than lessons (0.3) — a bit more
-                         // variety in question phrasing is fine here, since
-                         // there's no single "correct" way to phrase a question
-      messages: [
-        { role: 'system', content: buildAssessmentSystemPrompt() },
-        { role: 'user', content: buildAssessmentUserPrompt(indicator, options) },
-      ],
-    }),
+  const parsed = await geminiJson({
+    messages: [
+      { role: 'system', content: buildAssessmentSystemPrompt() },
+      { role: 'user', content: buildAssessmentUserPrompt(indicator, options) },
+    ],
   })
 
-  if (!response.ok) {
-    const errorBody = await response.text()
-    throw new Error(`Gemini request failed: ${response.status} ${response.statusText} — ${errorBody}`)
-  }
-
-  const data = await response.json()
-  const rawText: string = data.choices?.[0]?.message?.content ?? ''
-  const cleaned = rawText.replace(/```json|```/g, '').trim()
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(cleaned)
-  } catch {
-    throw new Error('AI response was not valid JSON.')
-  }
-
   if (!isValidAssessment(parsed)) {
-    throw new Error('AI response was missing required assessment fields.')
+    throw new GeminiError('invalid_shape', 'AI response was missing required assessment fields.')
   }
-
   return parsed
 }

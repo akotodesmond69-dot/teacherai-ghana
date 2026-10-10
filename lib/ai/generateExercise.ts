@@ -5,6 +5,7 @@
 // Folder: lib/ai/generateExercise.ts
 
 import { EXERCISE_JSON_SCHEMA_DESCRIPTION, isValidExerciseContent, type ExerciseContent } from './exerciseSchema'
+import { geminiJson, GeminiError } from './gemini'
 
 const SYSTEM_PROMPT = `You write exercise/homework questions and a marking
 scheme for Ghanaian teachers, based STRICTLY on the content provided to
@@ -22,37 +23,10 @@ Rules:
 
 ${EXERCISE_JSON_SCHEMA_DESCRIPTION}`
 
-async function callGemini(messages: any[]): Promise<ExerciseContent> {
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gemini-3.6-flash',
-      temperature: 0.4,
-      messages,
-    }),
-  })
-
-  if (!response.ok) {
-    const errorBody = await response.text()
-    throw new Error(`Gemini request failed: ${response.status} ${response.statusText} — ${errorBody}`)
-  }
-
-  const data = await response.json()
-  const rawText: string = data.choices?.[0]?.message?.content ?? ''
-  const cleaned = rawText.replace(/```json|```/g, '').trim()
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(cleaned)
-  } catch {
-    throw new Error('AI response was not valid JSON.')
-  }
+async function callGemini(messages: unknown[]): Promise<ExerciseContent> {
+  const parsed = await geminiJson({ messages })
   if (!isValidExerciseContent(parsed)) {
-    throw new Error('AI response was missing required exercise fields.')
+    throw new GeminiError('invalid_shape', 'AI response was missing required exercise fields.')
   }
   return parsed
 }
@@ -78,6 +52,7 @@ export async function generateExerciseFromText(
     } catch (err) {
       lastError = err as Error
       console.warn(`generateExerciseFromText attempt ${attempt} failed:`, lastError.message)
+      if (err instanceof GeminiError && ['auth', 'no_key', 'quota'].includes(err.kind)) break
     }
   }
   throw lastError ?? new Error('Exercise generation from text failed after retries.')
@@ -106,6 +81,7 @@ export async function generateExerciseFromImage(
     } catch (err) {
       lastError = err as Error
       console.warn(`generateExerciseFromImage attempt ${attempt} failed:`, lastError.message)
+      if (err instanceof GeminiError && ['auth', 'no_key', 'quota'].includes(err.kind)) break
     }
   }
   throw lastError ?? new Error('Exercise generation from image failed after retries.')

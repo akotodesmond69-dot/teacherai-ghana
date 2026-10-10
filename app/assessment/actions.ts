@@ -2,6 +2,7 @@
 // app/generate/actions.ts (Phase 6), but for assessments.
 // Folder: app/assessment/actions.ts
 'use server'
+import { friendlyAiError } from '@/lib/ai/gemini'
 
 import { createClient } from '@/lib/supabase/server'
 import { hasActivePremium } from '@/lib/payments/plans'
@@ -65,8 +66,9 @@ export async function generateAssessmentAction(
       },
       { questionTypes, numQuestions: safeNumQuestions }
     )
-  } catch {
-    return { error: 'Something went wrong generating the assessment. Please try again.' }
+  } catch (err) {
+    console.error('generateAssessmentAction: AI generation failed:', err)
+    return { error: friendlyAiError(err, 'assessment') }
   }
 
   const { data: saved, error: saveError } = await supabase

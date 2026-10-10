@@ -4,7 +4,7 @@
 // Folder: app/lesson/[id]/editor.tsx
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { saveLessonAction } from './actions'
 import { generateLessonPdf } from '@/lib/pdf/generateLessonPdf'
@@ -46,6 +46,27 @@ const CONTENT_ORDER: (keyof LessonNoteContent)[] = [
   'core_competencies', 'key_words', 'tlrs', 'references',
   'phase1_starter', 'phase2_main', 'phase3_plenary',
 ]
+
+// WHY this exists: a fixed-height textarea scrolls internally, so long AI
+// text (e.g. a detailed Phase 2) looked "hidden" until you scrolled inside
+// the box. This one grows to fit its content, and uses 12 pt text to match
+// the downloaded PDF / Word tables.
+function AutoTextarea(props: React.ComponentProps<typeof Textarea>) {
+  const ref = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${el.scrollHeight}px`
+  }, [props.value])
+  return (
+    <Textarea
+      {...props}
+      ref={ref}
+      style={{ fontSize: '12pt', lineHeight: 1.5, overflow: 'hidden', resize: 'none', ...props.style }}
+    />
+  )
+}
 
 function toTextareaValue(value: string | string[]): string {
   return Array.isArray(value) ? value.join('\n') : value
@@ -168,7 +189,7 @@ export function LessonEditor({
           <Label className="mb-1 block text-sm font-medium">
             {(CONTENT_LABELS as Record<string, string>)[field]}
           </Label>
-          <Textarea
+          <AutoTextarea
             value={toTextareaValue(content[field] as string | string[])}
             onChange={(e) => updateField(field, e.target.value)}
             rows={field.startsWith('phase') ? 5 : LIST_FIELDS.includes(field) ? 3 : 2}

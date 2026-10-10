@@ -1,15 +1,12 @@
-// Purpose: Builds a printable PDF of a lesson note, laid out as a real
-// bordered Ghana Education Service-style lesson-note table (header
-// logistics block + a Phase / Learners Activities / Resources grid) —
-// matching the look of the paper lesson-note books teachers already use,
-// instead of loose unbordered lines. Runs entirely in the browser via
-// jsPDF + jspdf-autotable — no server call, no API key.
+// Purpose: Builds a printable PDF of a lesson note, laid out as a bordered
+// table like the real Ghana Education Service lesson plan book — header
+// grid, curriculum data, and the three teaching phases. Runs entirely in
+// the browser via jsPDF — no server call, no API key, no external service.
 // Folder: lib/pdf/generateLessonPdf.ts
-// Depends on: jspdf, jspdf-autotable
+// Depends on: jspdf
 'use client'
 
 import { jsPDF } from 'jspdf'
-import autoTable, { type RowInput } from 'jspdf-autotable'
 import type { LessonNoteContent } from '@/lib/ai/lessonSchema'
 
 export interface LessonPdfMeta {
@@ -22,32 +19,17 @@ export interface LessonPdfMeta {
   indicatorCode: string
 }
 
-// Shared look-and-feel constants so the header table and the phase table
-// always match each other, and so any future tweak (font, border weight)
-// only needs to change in one place.
-const FONT = 'times'
-const INK: [number, number, number] = [20, 20, 20]
-const LABEL_INK: [number, number, number] = [90, 90, 90]
-const BORDER_COLOR: [number, number, number] = [0, 0, 0]
-const BORDER_WIDTH = 0.6
-const HEAD_FILL: [number, number, number] = [230, 230, 230]
+// Every piece of text inside the tables is this size (the default the
+// teacher asked for). Titles outside the tables are separate.
+const TABLE_FONT_SIZE = 12
+const LINE_HEIGHT = TABLE_FONT_SIZE * 1.3
+const CELL_PAD = 6
 
-// A "field" cell shows a small bold grey label on its own line, then the
-// value underneath in normal black text — this is what makes each cell
-// scannable instead of a wall of "Label: value" text mashed together.
-// `span` optionally makes the cell stretch across both header columns,
-// used for the longer curriculum fields (Content Standard, Indicator, etc).
-function field(label: string, value: string, span?: 2) {
-  return {
-    content: `${label}\n${value || '—'}`,
-    _label: label,
-    _value: value || '—',
-    ...(span ? { colSpan: span } : {}),
-  }
-}
-
-function listOrDash(items: string[]): string {
-  return items.filter(Boolean).length ? items.filter(Boolean).join('   •   ') : '—'
+interface Cell {
+  text: string | string[] // string[] = bullet list
+  width: number
+  bold?: boolean
+  shaded?: boolean
 }
 
 export function generateLessonPdf(meta: LessonPdfMeta, content: LessonNoteContent) {
@@ -55,157 +37,146 @@ export function generateLessonPdf(meta: LessonPdfMeta, content: LessonNoteConten
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const margin = 40
-  const usableWidth = pageWidth - margin * 2
+  const tableWidth = pageWidth - margin * 2 // 515pt
+  const bottomLimit = pageHeight - margin
+  let y = margin
 
-  // ---- Letterhead --------------------------------------------------------
-  doc.setFont(FONT, 'normal')
-  doc.setFontSize(9)
-  doc.setTextColor(...LABEL_INK)
-  doc.text('TeacherAI Ghana — Weekly Lesson Note', margin, margin)
-  doc.text(
-    `${meta.subjectName}  ·  ${meta.classLevel}`,
-    pageWidth - margin,
-    margin,
-    { align: 'right' }
-  )
+  // Column layouts. Header grid: label | value | label | value.
+  const hLabel = 80
+  const hValue = (tableWidth - hLabel * 2) / 2
+  // Main table: label | value.
+  const labelCol = 130
+  const valueCol = tableWidth - labelCol
 
-  doc.setFont(FONT, 'bold')
-  doc.setFontSize(15)
-  doc.setTextColor(...INK)
-  doc.text('WEEKLY LESSON NOTE', pageWidth / 2, margin + 22, { align: 'center' })
-
-  // Draws a "label on top, value below" cell exactly like the on-screen
-  // preview and the Word export, so a printed copy and the editor always
-  // agree on what each field looked like.
-  function labelValueCell(data: any) {
-    if (typeof data.cell.raw !== 'object' || !('_label' in data.cell.raw)) return
-    const { _label, _value } = data.cell.raw as { _label: string; _value: string }
-    const { x, y, width } = data.cell
-    const padX = data.cell.padding('left')
-    doc.setFont(FONT, 'bold')
-    doc.setFontSize(7.5)
-    doc.setTextColor(...LABEL_INK)
-    doc.text(_label.toUpperCase(), x + padX, y + 11)
-
-    doc.setFont(FONT, 'normal')
-    doc.setFontSize(9.5)
-    doc.setTextColor(...INK)
-    const valueLines = doc.splitTextToSize(_value, width - padX * 2)
-    doc.text(valueLines, x + padX, y + 23)
-    // Suppress autotable's own default text draw for this cell.
-    data.cell.text = []
-  }
-
-  // ---- Header logistics + curriculum block -------------------------------
-  const headerBody: RowInput[] = [
-    [field('Week Ending', content.week_ending), field('Day(s)', content.days)],
-    [field('Subject', meta.subjectName), field('Class', meta.classLevel)],
-    [field('Duration / Period', content.period), field('Class Size', content.class_size)],
-    [field('Week', content.week_number), field('Lesson', content.lesson_number)],
-    [field('Strand', meta.strand), field('Sub-Strand', meta.subStrand)],
-    [field('Content Standard', meta.contentStandard ?? '—', 2) as any],
-    [field(`Indicator (${meta.indicatorCode})`, meta.indicatorText, 2) as any],
-    [field('Core Competencies', listOrDash(content.core_competencies), 2) as any],
-    [field('Key Words', listOrDash(content.key_words), 2) as any],
-    [field('References', content.references, 2) as any],
-  ]
-
-  autoTable(doc, {
-    startY: margin + 34,
-    margin: { left: margin, right: margin },
-    theme: 'grid',
-    tableWidth: usableWidth,
-    styles: {
-      font: FONT,
-      fontSize: 9.5,
-      lineColor: BORDER_COLOR,
-      lineWidth: BORDER_WIDTH,
-      minCellHeight: 30,
-      valign: 'top',
-    },
-    columnStyles: { 0: { cellWidth: usableWidth / 2 }, 1: { cellWidth: usableWidth / 2 } },
-    body: headerBody,
-    didParseCell: (data) => {
-      // colSpan rows are stored as plain objects above; make sure the raw
-      // cell keeps its _label/_value so didDrawCell can still find them.
-      if (data.cell.raw && typeof data.cell.raw === 'object' && '_label' in (data.cell.raw as any)) {
-        data.cell.text = ['']
-      }
-    },
-    didDrawCell: labelValueCell,
-  })
-
-  // ---- Phase / Learners Activities / Resources table ---------------------
-  const afterHeaderY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
-  const resourcesText = listOrDash(content.tlrs)
-
-  const phaseCol = usableWidth * 0.18
-  const activitiesCol = usableWidth * 0.62
-  const resourcesCol = usableWidth * 0.2
-
-  autoTable(doc, {
-    startY: afterHeaderY + 14,
-    margin: { left: margin, right: margin },
-    theme: 'grid',
-    tableWidth: usableWidth,
-    styles: {
-      font: FONT,
-      fontSize: 9.5,
-      lineColor: BORDER_COLOR,
-      lineWidth: BORDER_WIDTH,
-      valign: 'top',
-      cellPadding: 6,
-      textColor: INK,
-    },
-    headStyles: {
-      fillColor: HEAD_FILL,
-      textColor: INK,
-      fontStyle: 'bold',
-      halign: 'left',
-      lineColor: BORDER_COLOR,
-      lineWidth: BORDER_WIDTH,
-    },
-    columnStyles: {
-      0: { cellWidth: phaseCol, fontStyle: 'bold' },
-      1: { cellWidth: activitiesCol },
-      2: { cellWidth: resourcesCol },
-    },
-    head: [['Phase / Duration', "Learners' Activities", 'Resources']],
-    body: [
-      ['PHASE 1\nSTARTER', content.phase1_starter || '—', ''],
-      ['PHASE 2\nMAIN (New Learning)', content.phase2_main || '—', resourcesText],
-      ['PHASE 3\nPLENARY / REFLECTION', content.phase3_plenary || '—', ''],
-    ],
-  })
-
-  // ---- Vetting footer ------------------------------------------------------
-  const afterPhaseY = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY
-  let footerY = afterPhaseY + 30
-  if (footerY > pageHeight - margin) {
+  function newPage() {
     doc.addPage()
-    footerY = margin + 20
+    y = margin
   }
-  doc.setFont(FONT, 'normal')
-  doc.setFontSize(9.5)
-  doc.setTextColor(...INK)
-  doc.text('Vetted by: _____________________', margin, footerY)
-  doc.text('Signature: _____________', margin + 210, footerY)
-  doc.text('Date: __________', margin + 350, footerY)
 
-  const weekLabel = content.week_number ? `week-${content.week_number}` : 'lesson'
-  doc.save(`lesson-plan-${weekLabel}.pdf`)
+  // Wraps text to a cell's inner width. jsPDF's splitTextToSize honours
+  // "\n", so the AI's own line breaks (numbered steps etc.) are kept.
+  function wrap(text: string | string[], width: number, bold: boolean): string[] {
+    doc.setFont('helvetica', bold ? 'bold' : 'normal')
+    doc.setFontSize(TABLE_FONT_SIZE)
+    const inner = width - CELL_PAD * 2
+    if (Array.isArray(text)) {
+      const items = text.map((t) => t.trim()).filter(Boolean)
+      if (items.length === 0) return ['—']
+      return items.flatMap((item) => doc.splitTextToSize(`•  ${item}`, inner) as string[])
+    }
+    const value = text && text.trim() ? text : ''
+    return value ? (doc.splitTextToSize(value, inner) as string[]) : ['']
+  }
+
+  // Draws one table row. If the row is taller than the space left on the
+  // page, it is split line-by-line across pages (borders redrawn on each
+  // page) — so a long Phase 2 is never cut off or pushed off the page.
+  function drawRow(cells: Cell[]) {
+    const wrapped = cells.map((c) => wrap(c.text, c.width, !!c.bold))
+    const totalLines = Math.max(1, ...wrapped.map((l) => l.length))
+    let i = 0
+
+    // Don't start a long row with just a line or two at the bottom of a
+    // page (it leaves the label cut off, e.g. "Phase 2: Main (new").
+    // Short rows still need to fit whole; long rows need at least 4 lines.
+    const minLinesToStart = Math.min(totalLines, 4)
+    if (Math.floor((bottomLimit - y - CELL_PAD * 2) / LINE_HEIGHT) < minLinesToStart) newPage()
+
+    while (i < totalLines) {
+      let linesFit = Math.floor((bottomLimit - y - CELL_PAD * 2) / LINE_HEIGHT)
+      if (linesFit < 1) {
+        newPage()
+        linesFit = Math.floor((bottomLimit - y - CELL_PAD * 2) / LINE_HEIGHT)
+      }
+      const take = Math.min(linesFit, totalLines - i)
+      const segHeight = take * LINE_HEIGHT + CELL_PAD * 2
+
+      let x = margin
+      cells.forEach((c, ci) => {
+        // Background + border first, then text on top.
+        if (c.shaded) {
+          doc.setFillColor(237, 237, 237)
+          doc.rect(x, y, c.width, segHeight, 'F')
+        }
+        doc.setDrawColor(60)
+        doc.setLineWidth(0.6)
+        doc.rect(x, y, c.width, segHeight, 'S')
+
+        doc.setFont('helvetica', c.bold ? 'bold' : 'normal')
+        doc.setFontSize(TABLE_FONT_SIZE)
+        doc.setTextColor(0)
+        wrapped[ci].slice(i, i + take).forEach((line, li) => {
+          doc.text(line, x + CELL_PAD, y + CELL_PAD + li * LINE_HEIGHT, { baseline: 'top' })
+        })
+        x += c.width
+      })
+
+      y += segHeight
+      i += take
+    }
+  }
+
+  const detail = (label: string, value: string | string[]) =>
+    drawRow([
+      { text: label, width: labelCol, bold: true, shaded: true },
+      { text: value, width: valueCol },
+    ])
+
+  const headerPair = (l1: string, v1: string, l2: string, v2: string) =>
+    drawRow([
+      { text: l1, width: hLabel, bold: true, shaded: true },
+      { text: v1, width: hValue },
+      { text: l2, width: hLabel, bold: true, shaded: true },
+      { text: v2, width: hValue },
+    ])
+
+  // ---- Title ----
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(16)
+  doc.text('LESSON PLAN', pageWidth / 2, y, { align: 'center', baseline: 'top' })
+  y += 30
+
+  // ---- Header grid (blank values are left empty to hand-write) ----
+  headerPair('Week', content.week_number, 'Subject', meta.subjectName)
+  headerPair('Class', meta.classLevel, 'Class Size', content.class_size)
+  headerPair('Week Ending', content.week_ending, 'Day(s)', content.days)
+  headerPair('Date', content.date, 'Period', content.period)
+  drawRow([
+    { text: 'Lesson', width: hLabel, bold: true, shaded: true },
+    { text: content.lesson_number, width: tableWidth - hLabel },
+  ])
+  y += 12
+
+  // ---- Main table ----
+  detail('Strand', meta.strand)
+  detail('Sub-strand', meta.subStrand)
+  detail('Indicator (code)', meta.indicatorCode)
+  detail('Content standard', meta.contentStandard ?? '—')
+  detail('Performance indicator', meta.indicatorText)
+  detail('Core Competencies', content.core_competencies)
+  detail('Key Words', content.key_words.join(', ') || '—')
+  detail('T.L.R(s)', content.tlrs)
+  detail('Ref', content.references || '—')
+  detail('Phase 1: Starter (preparing the brain for learning)', content.phase1_starter || '—')
+  detail('Phase 2: Main (new learning, including assessment)', content.phase2_main || '—')
+  detail('Phase 3: Plenary / Reflections', content.phase3_plenary || '—')
+
+  // ---- Vetting line: placed right after the table (not pinned to the page
+  // bottom, where it used to overprint the last lines of text). ----
+  y += 24
+  if (y > bottomLimit - 20) newPage()
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(TABLE_FONT_SIZE)
+  doc.text('Vetted by: ____________________', margin, y, { baseline: 'top' })
+  doc.text('Signature: ____________', margin + 220, y, { baseline: 'top' })
+  doc.text('Date: __________', margin + 400, y, { baseline: 'top' })
+
+  doc.save('lesson-plan.pdf')
 }
 
 // Testing steps:
-// 1. Fill in a few header fields (Week, Week Ending, Day) in the editor,
-//    then click "Download as PDF."
-// 2. Expected: a bordered table downloads with two clearly labelled
-//    columns of header fields (Week Ending/Day, Subject/Class, etc.),
-//    followed by a full-width Content Standard / Indicator / Core
-//    Competencies / Key Words / References block, then a bordered
-//    3-column "Phase / Duration | Learners' Activities | Resources"
-//    table for Starter, Main, and Plenary, and a vetting line at the
-//    bottom — all in a single serif font at consistent sizes.
-// 3. Try a lesson with very long phase text — confirm the table grows
-//    and moves to a new page cleanly (jspdf-autotable handles page
-//    breaks and repeats column widths automatically).
+// 1. Fill in a few header fields, then click "Download as PDF."
+// 2. Expected: lesson-plan.pdf with a bordered header grid and a bordered
+//    two-column table, all 12 pt; long cells wrap inside their column; a
+//    long Phase 2 continues onto the next page with borders intact; the
+//    "Vetted by" line sits below the table without touching it.
