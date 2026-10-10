@@ -4,6 +4,7 @@
 // Folder: lib/scheme/generateWeeklyFocusSummaries.ts
 
 import type { WeekGroup } from './buildWeeklyGroups'
+import { geminiChat, extractJson } from '@/lib/ai/gemini'
 
 export interface WeekWithFocus extends WeekGroup {
   focus_summary: string
@@ -32,37 +33,19 @@ export async function generateWeeklyFocusSummaries(
     )
     .join('\n\n')
 
-  const response = await fetch('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${process.env.GEMINI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: 'gemini-3.6-flash',
-      temperature: 0.3,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: userPrompt },
-      ],
-    }),
+  // This prompt asks for a top-level JSON ARRAY, so we do NOT use Gemini's
+  // json_object mode (that forces an object). extractJson() handles fences
+  // and stray text instead; and we accept an array wrapped in an object too.
+  const text = await geminiChat({
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: userPrompt },
+    ],
   })
-
-  if (!response.ok) {
-    const errorBody = await response.text()
-    throw new Error(`Gemini request failed: ${response.status} — ${errorBody}`)
-  }
-
-  const data = await response.json()
-  const rawText: string = data.choices?.[0]?.message?.content ?? ''
-  const cleaned = rawText.replace(/```json|```/g, '').trim()
-
-  let summaries: { week_number: number; focus_summary: string }[]
-  try {
-    summaries = JSON.parse(cleaned)
-  } catch {
-    throw new Error('AI response was not valid JSON.')
-  }
+  const raw = extractJson(text)
+  const summaries: { week_number: number; focus_summary: string }[] = Array.isArray(raw)
+    ? raw
+    : ((Object.values(raw as Record<string, unknown>).find(Array.isArray) as any[]) ?? [])
 
   // Merge the AI's summaries back onto the original (already-correct)
   // week groupings — we never let the AI's response change which

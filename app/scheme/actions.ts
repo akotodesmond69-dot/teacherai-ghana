@@ -58,7 +58,8 @@ export async function generateSchemeAction(
   let weeksWithFocus
   try {
     weeksWithFocus = await generateWeeklyFocusSummaries(weekGroups)
-  } catch {
+  } catch (err) {
+    console.warn('scheme action: AI summaries failed, saving without them:', err)
     // Fall back gracefully: a scheme with correct indicators but no AI
     // summary text is still useful; failing the whole feature would not be.
     weeksWithFocus = weekGroups.map((w) => ({ ...w, focus_summary: '' }))

@@ -3,6 +3,8 @@
 // Folder: app/exercises/actions.ts
 'use server'
 
+import { friendlyAiError } from '@/lib/ai/gemini'
+
 import { createClient } from '@/lib/supabase/server'
 import { hasActivePremium } from '@/lib/payments/plans'
 import { generateExerciseFromText, generateExerciseFromImage } from '@/lib/ai/generateExercise'
@@ -56,7 +58,7 @@ export async function generateExerciseFromTextAction(
     content = await generateExerciseFromText(extractedText, safeQuestionCount)
   } catch (err) {
     console.error('generateExerciseFromTextAction: AI failed:', err)
-    return { error: 'Something went wrong generating the exercise. Please try again.' }
+    return { error: friendlyAiError(err, 'exercise') }
   }
 
   const { data: saved, error: saveError } = await supabase
@@ -97,7 +99,7 @@ export async function generateExerciseFromImageAction(
     content = await generateExerciseFromImage(imageDataUrl, safeQuestionCount)
   } catch (err) {
     console.error('generateExerciseFromImageAction: AI failed:', err)
-    return { error: 'Something went wrong generating the exercise. Please try again.' }
+    return { error: friendlyAiError(err, 'exercise') }
   }
 
   const { data: saved, error: saveError } = await supabase

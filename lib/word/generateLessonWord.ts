@@ -1,20 +1,16 @@
 // Purpose: Builds a downloadable Word (.docx) document of a lesson note,
-// laid out as a real bordered Ghana Education Service-style lesson-note
-// table — a header logistics block (Week Ending/Day, Subject/Class,
-// Strand/Sub-Strand, Content Standard, Indicator, Core Competencies, Key
-// Words, References) followed by a bordered Phase / Learners' Activities
-// / Resources grid — matching the PDF export and the paper lesson-note
-// books teachers already use. Runs entirely in the browser via the `docx`
-// library — no server call, no API key. This is a PREMIUM-only feature;
-// the gating happens in the editor UI (app/lesson/[id]/editor.tsx), not
-// here — this file only builds the document once called.
+// laid out as a real bordered table like the Ghana Education Service lesson
+// plan book — header logistics, curriculum data, and the three teaching
+// phases. Runs entirely in the browser via the `docx` library — no server
+// call, no API key. This is a PREMIUM-only feature; the gating happens in
+// the editor UI (app/lesson/[id]/editor.tsx), not here.
 // Folder: lib/word/generateLessonWord.ts
 // Depends on: docx
 'use client'
 
 import {
-  Document, Packer, Paragraph, TextRun, AlignmentType,
-  Table, TableRow, TableCell, WidthType, BorderStyle, ShadingType,
+  Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType,
+  Table, TableRow, TableCell, WidthType, TableLayoutType, ShadingType,
 } from 'docx'
 import type { LessonNoteContent } from '@/lib/ai/lessonSchema'
 
@@ -29,192 +25,143 @@ export interface LessonWordMeta {
 }
 
 // ---------------------------------------------------------------------------
-// Shared styling constants — one place to tweak font, border weight, or
-// label colour so the header block and the phase grid always match.
+// Layout constants. WHY these exist: the old export gave cell widths as
+// percentages, which Word renders unreliably (columns collapse and text gets
+// clipped). A fixed layout with explicit widths in DXA (1/20 of a point)
+// always renders the same in Word, Google Docs and LibreOffice.
 // ---------------------------------------------------------------------------
-const BODY_SIZE = 20 // 10pt (docx sizes are in half-points)
-const LABEL_SIZE = 15 // 7.5pt
-const LABEL_COLOR = '5A5A5A'
-const CELL_MARGINS = { top: 80, bottom: 80, left: 110, right: 110 }
+const FONT = 'Arial'
+const TABLE_FONT_SIZE = 24 // half-points → 12 pt. Every piece of text in the tables uses this.
+const PAGE_WIDTH = 11906 // A4 in DXA
+const MARGIN = 1080 // 0.75 inch
+const TABLE_WIDTH = PAGE_WIDTH - MARGIN * 2 // 9746
+const LABEL_COL = 2400
+const VALUE_COL = TABLE_WIDTH - LABEL_COL
+const LABEL_FILL = 'EDEDED'
 
-const LINE = { style: BorderStyle.SINGLE, size: 4, color: '000000' }
-const TABLE_BORDERS = {
-  top: LINE, bottom: LINE, left: LINE, right: LINE,
-  insideHorizontal: LINE, insideVertical: LINE,
+// 4-column layout for the header grid: label | value | label | value
+const H_LABEL = 1700
+const H_VALUE = (TABLE_WIDTH - H_LABEL * 2) / 2
+
+function run(text: string, bold = false): TextRun {
+  return new TextRun({ text, bold, size: TABLE_FONT_SIZE, font: FONT })
 }
 
-function listOrDash(items: string[]): string {
-  return items.filter(Boolean).length ? items.filter(Boolean).join('  •  ') : '—'
-}
-
-function labelParagraph(label: string): Paragraph {
-  return new Paragraph({
-    children: [new TextRun({ text: label.toUpperCase(), bold: true, size: LABEL_SIZE, color: LABEL_COLOR })],
-    spacing: { after: 40 },
-  })
-}
-
-// Splits multi-line lesson-content text (Starter/Main/Plenary) into one
-// paragraph per line so line breaks the teacher typed survive the export,
-// instead of collapsing into a single unreadable block.
-function bodyParagraphs(text: string): Paragraph[] {
-  const lines = (text || '').split('\n').filter((l) => l.trim().length > 0)
-  if (lines.length === 0) return [new Paragraph({ children: [new TextRun({ text: '—', size: BODY_SIZE })] })]
-  return lines.map(
-    (line, i) =>
-      new Paragraph({
-        children: [new TextRun({ text: line, size: BODY_SIZE })],
-        spacing: { after: i === lines.length - 1 ? 0 : 90 },
-      })
+// WHY we split on newlines: a TextRun ignores "\n", so multi-step phases
+// ("1. ... 2. ...") used to run together into one wall of text. One
+// paragraph per line keeps the AI's own structure.
+function linesToParagraphs(text: string, blankIfEmpty = false): Paragraph[] {
+  const lines = (text || (blankIfEmpty ? '' : '—')).split(/\r?\n/).map((l) => l.trimEnd())
+  const nonEmpty = lines.some((l) => l.trim() !== '')
+  return (nonEmpty ? lines : [blankIfEmpty ? '' : '—']).map(
+    (line) => new Paragraph({ children: [run(line)], spacing: { after: 80 } })
   )
 }
 
 function bulletParagraphs(items: string[]): Paragraph[] {
-  const clean = items.filter(Boolean)
-  if (clean.length === 0) return [new Paragraph({ children: [new TextRun({ text: '—', size: BODY_SIZE })] })]
+  const clean = items.map((i) => i.trim()).filter(Boolean)
+  if (clean.length === 0) return [new Paragraph({ children: [run('—')] })]
   return clean.map(
-    (item) => new Paragraph({ text: item, bullet: { level: 0 }, spacing: { after: 40 } })
+    (item) =>
+      new Paragraph({ children: [run(item)], bullet: { level: 0 }, spacing: { after: 60 } })
   )
 }
 
-// A field cell: small grey label on top, value(s) underneath — the same
-// pattern used in the PDF export, so screen, PDF, and Word always agree.
-function fieldCell(label: string, body: Paragraph[], opts: { widthPct?: number; columnSpan?: number } = {}): TableCell {
+function cell(
+  children: Paragraph[],
+  width: number,
+  opts: { shaded?: boolean; columnSpan?: number } = {}
+): TableCell {
   return new TableCell({
-    width: { size: opts.widthPct ?? 50, type: WidthType.PERCENTAGE },
+    children,
+    width: { size: width, type: WidthType.DXA },
     columnSpan: opts.columnSpan,
-    margins: CELL_MARGINS,
-    children: [labelParagraph(label), ...body],
+    shading: opts.shaded ? { type: ShadingType.CLEAR, color: 'auto', fill: LABEL_FILL } : undefined,
+    margins: { top: 80, bottom: 80, left: 120, right: 120 },
   })
 }
 
-function valuePara(text: string): Paragraph {
-  return new Paragraph({ children: [new TextRun({ text: text || '—', size: BODY_SIZE })] })
+const labelCell = (text: string, width = LABEL_COL) =>
+  cell([new Paragraph({ children: [run(text, true)] })], width, { shaded: true })
+
+function detailRow(label: string, valueParas: Paragraph[]): TableRow {
+  return new TableRow({ children: [labelCell(label), cell(valueParas, VALUE_COL)] })
 }
 
-function headerRow(cells: TableCell[]): TableRow {
+function headerRow(l1: string, v1: string, l2?: string, v2?: string): TableRow {
+  const cells: TableCell[] = [
+    labelCell(l1, H_LABEL),
+    cell(linesToParagraphs(v1, true), H_VALUE),
+  ]
+  if (l2 !== undefined) {
+    cells.push(labelCell(l2, H_LABEL), cell(linesToParagraphs(v2 ?? '', true), H_VALUE))
+  } else {
+    // Last row has a single field — let its value span the rest of the row.
+    cells[1] = cell(linesToParagraphs(v1, true), H_VALUE * 2 + H_LABEL, { columnSpan: 3 })
+  }
   return new TableRow({ children: cells })
 }
 
-function phaseHeaderCell(text: string, widthPct: number): TableCell {
-  return new TableCell({
-    width: { size: widthPct, type: WidthType.PERCENTAGE },
-    shading: { fill: 'E6E6E6', type: ShadingType.CLEAR, color: 'auto' },
-    margins: CELL_MARGINS,
-    children: [new Paragraph({ children: [new TextRun({ text, bold: true, size: BODY_SIZE })] })],
-  })
-}
-
-function phaseNameCell(label: string, sub: string, widthPct: number): TableCell {
-  return new TableCell({
-    width: { size: widthPct, type: WidthType.PERCENTAGE },
-    margins: CELL_MARGINS,
-    children: [
-      new Paragraph({ children: [new TextRun({ text: label, bold: true, size: BODY_SIZE })] }),
-      new Paragraph({ children: [new TextRun({ text: sub, size: LABEL_SIZE, color: LABEL_COLOR })] }),
-    ],
-  })
-}
-
-function phaseBodyCell(text: string, widthPct: number): TableCell {
-  return new TableCell({
-    width: { size: widthPct, type: WidthType.PERCENTAGE },
-    margins: CELL_MARGINS,
-    children: bodyParagraphs(text),
-  })
-}
-
+// Blank header fields (e.g. Week Ending) are left empty for the teacher to
+// write in, like the paper plan book. Content is passed as-is.
 export async function generateLessonWord(meta: LessonWordMeta, content: LessonNoteContent) {
   const headerTable = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    borders: TABLE_BORDERS,
+    width: { size: TABLE_WIDTH, type: WidthType.DXA },
+    columnWidths: [H_LABEL, H_VALUE, H_LABEL, H_VALUE],
+    layout: TableLayoutType.FIXED,
     rows: [
-      headerRow([fieldCell('Week Ending', [valuePara(content.week_ending)]), fieldCell('Day(s)', [valuePara(content.days)])]),
-      headerRow([fieldCell('Subject', [valuePara(meta.subjectName)]), fieldCell('Class', [valuePara(meta.classLevel)])]),
-      headerRow([fieldCell('Duration / Period', [valuePara(content.period)]), fieldCell('Class Size', [valuePara(content.class_size)])]),
-      headerRow([fieldCell('Week', [valuePara(content.week_number)]), fieldCell('Lesson', [valuePara(content.lesson_number)])]),
-      headerRow([fieldCell('Strand', [valuePara(meta.strand)]), fieldCell('Sub-Strand', [valuePara(meta.subStrand)])]),
-      headerRow([fieldCell('Content Standard', [valuePara(meta.contentStandard ?? '—')], { widthPct: 100, columnSpan: 2 })]),
-      headerRow([fieldCell(`Indicator (${meta.indicatorCode})`, [valuePara(meta.indicatorText)], { widthPct: 100, columnSpan: 2 })]),
-      headerRow([fieldCell('Core Competencies', bulletParagraphs(content.core_competencies), { widthPct: 100, columnSpan: 2 })]),
-      headerRow([fieldCell('Key Words', [valuePara(listOrDash(content.key_words))], { widthPct: 100, columnSpan: 2 })]),
-      headerRow([fieldCell('References', [valuePara(content.references)], { widthPct: 100, columnSpan: 2 })]),
+      headerRow('Week', content.week_number, 'Subject', meta.subjectName),
+      headerRow('Class', meta.classLevel, 'Class Size', content.class_size),
+      headerRow('Week Ending', content.week_ending, 'Day(s)', content.days),
+      headerRow('Date', content.date, 'Period', content.period),
+      headerRow('Lesson', content.lesson_number),
     ],
   })
 
-  const phaseTable = new Table({
-    width: { size: 100, type: WidthType.PERCENTAGE },
-    borders: TABLE_BORDERS,
+  const mainTable = new Table({
+    width: { size: TABLE_WIDTH, type: WidthType.DXA },
+    columnWidths: [LABEL_COL, VALUE_COL],
+    layout: TableLayoutType.FIXED,
     rows: [
-      new TableRow({
-        tableHeader: true,
-        children: [
-          phaseHeaderCell('Phase / Duration', 18),
-          phaseHeaderCell("Learners' Activities", 62),
-          phaseHeaderCell('Resources', 20),
-        ],
-      }),
-      new TableRow({
-        children: [
-          phaseNameCell('PHASE 1', 'STARTER', 18),
-          phaseBodyCell(content.phase1_starter, 62),
-          phaseBodyCell('', 20),
-        ],
-      }),
-      new TableRow({
-        children: [
-          phaseNameCell('PHASE 2', 'MAIN (New Learning)', 18),
-          phaseBodyCell(content.phase2_main, 62),
-          phaseBodyCell(listOrDash(content.tlrs), 20),
-        ],
-      }),
-      new TableRow({
-        children: [
-          phaseNameCell('PHASE 3', 'PLENARY / REFLECTION', 18),
-          phaseBodyCell(content.phase3_plenary, 62),
-          phaseBodyCell('', 20),
-        ],
-      }),
+      detailRow('Strand', linesToParagraphs(meta.strand)),
+      detailRow('Sub-strand', linesToParagraphs(meta.subStrand)),
+      detailRow('Indicator (code)', linesToParagraphs(meta.indicatorCode)),
+      detailRow('Content standard', linesToParagraphs(meta.contentStandard ?? '—')),
+      detailRow('Performance indicator', linesToParagraphs(meta.indicatorText)),
+      detailRow('Core Competencies', bulletParagraphs(content.core_competencies)),
+      detailRow('Key Words', linesToParagraphs(content.key_words.join(', '))),
+      detailRow('T.L.R(s)', bulletParagraphs(content.tlrs)),
+      detailRow('Ref', linesToParagraphs(content.references)),
+      detailRow('Phase 1: Starter (preparing the brain for learning)', linesToParagraphs(content.phase1_starter)),
+      detailRow('Phase 2: Main (new learning, including assessment)', linesToParagraphs(content.phase2_main)),
+      detailRow('Phase 3: Plenary / Reflections', linesToParagraphs(content.phase3_plenary)),
     ],
   })
 
   const doc = new Document({
-    // Sets the whole document's default font/size up front so nothing
-    // falls back to Word's default Calibri theme (which is what made the
-    // old export's fonts look inconsistent next to the tables).
-    styles: {
-      default: {
-        document: { run: { font: 'Times New Roman', size: BODY_SIZE } },
-      },
-    },
+    // Default font for anything not explicitly styled.
+    styles: { default: { document: { run: { font: FONT, size: TABLE_FONT_SIZE } } } },
     sections: [
       {
+        properties: {
+          page: { margin: { top: MARGIN, bottom: MARGIN, left: MARGIN, right: MARGIN } },
+        },
         children: [
           new Paragraph({
-            alignment: AlignmentType.CENTER,
-            spacing: { after: 40 },
-            children: [
-              new TextRun({
-                text: `${meta.subjectName} · ${meta.classLevel} · Week ${content.week_number || '—'}`,
-                size: LABEL_SIZE,
-                color: LABEL_COLOR,
-              }),
-            ],
-          }),
-          new Paragraph({
+            children: [new TextRun({ text: 'LESSON PLAN', bold: true, size: 32, font: FONT, color: '000000' })],
+            heading: HeadingLevel.HEADING_1,
             alignment: AlignmentType.CENTER,
             spacing: { after: 200 },
-            children: [new TextRun({ text: 'WEEKLY LESSON NOTE', bold: true, size: 32 })],
           }),
           headerTable,
-          new Paragraph({ text: '', spacing: { before: 200, after: 100 } }),
-          phaseTable,
-          new Paragraph({ text: '', spacing: { before: 300 } }),
+          new Paragraph({ children: [], spacing: { after: 120 } }),
+          mainTable,
+          new Paragraph({ children: [], spacing: { before: 300 } }),
           new Paragraph({
             children: [
-              new TextRun({ text: 'Vetted by: _____________________     ', size: BODY_SIZE }),
-              new TextRun({ text: 'Signature: _____________     ', size: BODY_SIZE }),
-              new TextRun({ text: 'Date: __________', size: BODY_SIZE }),
+              run('Vetted by: _____________________     '),
+              run('Signature: _____________     '),
+              run('Date: __________'),
             ],
           }),
         ],
@@ -226,19 +173,14 @@ export async function generateLessonWord(meta: LessonWordMeta, content: LessonNo
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.href = url
-  const weekLabel = content.week_number ? `week-${content.week_number}` : 'lesson'
-  link.download = `lesson-plan-${weekLabel}.docx`
+  link.download = 'lesson-plan.docx'
   link.click()
   URL.revokeObjectURL(url)
 }
 
 // Testing steps:
 // 1. As a Premium teacher, open a lesson, click "Download as Word."
-// 2. Expected: a bordered table downloads, opens correctly in Microsoft
-//    Word or Google Docs, and is fully editable — matching the PDF export
-//    layout (label-on-top/value-below header cells, then a bordered
-//    Phase / Learners' Activities / Resources grid), all in one
-//    consistent Times New Roman font instead of Word's default theme.
-// 3. Confirm all header fields, curriculum data, and the three phases
-//    appear, matching what's on screen in the editor, and that long
-//    Starter/Main/Plenary text keeps its line breaks.
+// 2. Expected: lesson-plan.docx opens with two bordered tables (a header
+//    grid, then Strand → Phase 3), every cell in 12 pt Arial, nothing
+//    clipped, multi-line phases showing one line per paragraph, and long
+//    rows continuing onto the next page instead of being cut off.

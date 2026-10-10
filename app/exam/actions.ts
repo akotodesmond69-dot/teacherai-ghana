@@ -12,6 +12,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { hasActivePremium } from '@/lib/payments/plans'
 import { generateExam, generateExamFromCurriculum } from '@/lib/ai/generateExam'
+import { friendlyAiError } from '@/lib/ai/gemini'
 import { getExamBand, EXAM_STRUCTURES, isValidExamContent, type ExamContent } from '@/lib/ai/examSchema'
 import type { LessonSourceInput, CurriculumSourceInput } from '@/lib/ai/buildExamPrompt'
 
@@ -100,7 +101,7 @@ export async function generateExamAction(lessonIds: string[]) {
     examContent = await generateExam(subjectName, classLevel, lessonSources, structure)
   } catch (err) {
     console.error('generateExamAction: AI generation failed:', err)
-    return { error: 'Something went wrong generating the exam. Please try again.' }
+    return { error: friendlyAiError(err, 'exam') }
   }
 
   const { data: saved, error: saveError } = await supabase
@@ -180,7 +181,7 @@ export async function generateExamFromCurriculumAction(indicatorIds: string[]) {
     examContent = await generateExamFromCurriculum(subjectName, classLevel, curriculumSources, structure)
   } catch (err) {
     console.error('generateExamFromCurriculumAction: AI generation failed:', err)
-    return { error: 'Something went wrong generating the exam. Please try again.' }
+    return { error: friendlyAiError(err, 'exam') }
   }
 
   const { data: saved, error: saveError } = await supabase

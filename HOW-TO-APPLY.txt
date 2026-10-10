@@ -1,0 +1,12 @@
+HOW TO APPLY THIS UPDATE
+========================
+1. Open your cloned repo folder (GitHub Desktop: Repository > Show in Explorer).
+2. Copy EVERYTHING inside this zip (the app, lib folders and .env.local.example)
+   into the repo folder. Choose "Replace the files in the destination".
+3. Do NOT touch package.json, package-lock.json or any other file.
+4. GitHub Desktop > Changes tab should list exactly 24 files:
+   16 modified + 8 new.   Commit, then Push.
+
+No database (SQL) changes are needed. No new packages are needed.
+Optional: in Vercel > Settings > Environment Variables you may add
+GEMINI_MODEL (leave it out to use the built-in default order).
